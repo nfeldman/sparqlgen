@@ -1,0 +1,18 @@
+{
+  "name": "sparqlgen",
+  "version": "0.0.0",
+  "description": "Utility to generate sparql queries from the ast produced by antoniogarrote's Abstract Query Tree utility",
+  "main": "Query.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "keywords": [
+    "sparql",
+    "query",
+    "semantic",
+    "rdf"
+  ],
+  "author": "Noah Feldman",
+  "license": "LGPL3.0"
+}
