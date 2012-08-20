@@ -191,7 +191,7 @@ Query.prototype.toString = function () {
         prefixes = '',
         svars    = '',
         query    = [],
-        state    = {},
+        state    = {GUPct:-1},
     // presuambly, if there were a count() or something, there'd be more units, 
     // but we're going to pretend there's only ever one
         unit = this.parsed.units[0];
@@ -216,35 +216,27 @@ Query.prototype.toString = function () {
 
         svars += (i?' ':'') + '?' + token.value.value;
     });
+
     query.push(svars);
 
-    // add the WHERE
-    query.push('WHERE {');
+    query.push('WHERE');
 
     // now we just traverse the patterns and build up our string
     // much easier to do than to explain, unfortunately.    
     visit(unit.pattern.patterns, function (_) { // pre
         if (_ && _.token) {
-            if (_.token == 'optionalgraphpattern') {
-                query.push('OPTIONAL {');
-            }
+            if (_.token == 'optionalgraphpattern')
+                query.push('OPTIONAL');
+
             if (_.token == 'graphunionpattern') {
                 state.inGUP = true;
-            } 
-            if (_.token == 'groupgraphpattern') {
-                if (state.inGUP) {
-                    if (!state.GUPct)
-                        state.GUPct = 0;
+                ++state.GUPct;
+                query.push('{');
+            }
 
-                    ++state.GUPct;
+            if (_.token == 'groupgraphpattern')
+                query.push('{');
 
-                    if (!(state.GUPct % 2))
-                        query.push('UNION {')
-                    else
-                        query.push('{');
-
-                }
-            } 
             if (_.token == 'var') {
                 query.push('?' + _.value);
             } else if (_.token == 'uri') {
@@ -261,20 +253,21 @@ Query.prototype.toString = function () {
             }
         }
 
-    }, function (_) { // post
+    }, function (_, p) { // post
         _ && _.subject && query.push('.'); // end of a triple
 
-        if (_ && _.token && _.token == 'graphunionpattern') {
-            state.GUPct = 0;
-            state.inGUP = false;
-        }
-
-        if (_.token == 'optionalgraphpattern' || state.inGUP && _ && _.token && _.token == 'groupgraphpattern' && state.GUPct) {
+        if (_.token == 'optionalgraphpattern' || _.token == 'groupgraphpattern')
             query.push('}');
+
+        if (_.token == 'groupgraphpattern' && state.inGUP)
+            query.push('UNION');
+
+        if (_.token && _.token == 'graphunionpattern') {
+            (state.GUPct == 0 || !(state.GUPct % 2)) && query.pop();
+            state.inGUP = false;
+            state.GUPct = -1;
         }
     });
-    
-    query.push('}');
 
     return this.query = prefixes + query.join(' ');
 
