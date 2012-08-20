@@ -1,18 +1,18 @@
 /**
  * @fileOverview Provides a Query class for building sparql queries incremental-
- * ly. WARNING: My grasp of Sparql semantics is slight and shaky. Much of what 
+ * ly. WARNING: My grasp of Sparql semantics is slight and shaky. Much of what
  * happens here is still guesswork and will be fixed as my understanding grows.
  *
- * There's nothing going on here that couldn't be done with Jena, but then I'd 
+ * There's nothing going on here that couldn't be done with Jena, but then I'd
  * have to use Java.
- * 
+ *
  * @author Noah Feldman
  *
  * @requires  rdfstore-js
- * 
+ *
  */
 var AbstractQueryTree = require("./rdfstore-js/src/js-sparql-parser/src/abstract_query_tree").AbstractQueryTree.AbstractQueryTree,
-    
+
     // these two are from my requirer project
     each  = require('./each'),
     visit = require('./visit'),
@@ -36,7 +36,7 @@ function mergeBGP (dest, src, callback) {
 
 /**
  * @class Query
- * @param  {string} [prefixes] 
+ * @param  {string} [prefixes]
  * @return {Query}
  */
 Query = module.exports = function (prefixes) {
@@ -56,7 +56,7 @@ Query.prototype.parse = function (query) {
 
     // prevent accidentally calling parse again.
     this.parse = function () {console.warn('parse called once. to call again, first delete parse from the current instance')};
-    
+
     // build a set to track vars
     each(this.parsed.units[0].projection, function (token) {
         if (token.kind == 'var')
@@ -67,7 +67,7 @@ Query.prototype.parse = function (query) {
     each(this.parsed.prologue.prefixes, function (token) {
         !this._prfxMap[token.prefix] && (this._prfxMap[token.prefix] = token.local);
     }, this);
-    
+
     return this;
 };
 
@@ -108,15 +108,15 @@ Query.prototype._addBGP = function (tree) {
 
 // according to the grammar
 // [25]    GroupOrUnionGraphPattern      ::=   GroupGraphPattern ( 'UNION' GroupGraphPattern )*
-    
+
     if (isOptional) {
         pattern.patterns.push(newBGP);
     } else {
         each(pattern.patterns, function (_) {
             var addedToUnion = false;
 
-            // if we're dealing with a union, figure out if the subject of the 
-            // new triple is also a subject of either subclause and added it ... 
+            // if we're dealing with a union, figure out if the subject of the
+            // new triple is also a subject of either subclause and added it ...
             // I don't think UNION has to be on subject, but assume it for now.
             if (_.token == 'graphunionpattern') {
                 each(_.value, function (_value) {
@@ -125,7 +125,7 @@ Query.prototype._addBGP = function (tree) {
                     }
                 });
             }
-            // if either this isn't a union or the subject isn't part of an 
+            // if either this isn't a union or the subject isn't part of an
             // alternative, then we can (I think) just add it as another pattern
             // TODO undo confusion
             if (!addedToUnion) {
@@ -172,7 +172,7 @@ Query.prototype.addSPO = function (spo) {
 
 Query.prototype.addOptionalSPO = function (spo) {
     var tree = this._genTriple(spo);
-    // at this point we should have a basicgraphpattern containing a single 
+    // at this point we should have a basicgraphpattern containing a single
     // triple. All we have to do is take that triple and make it optional.
     tree.units[0].pattern.patterns.push({
         token: "optionalgraphpattern",
@@ -192,12 +192,12 @@ Query.prototype.toString = function () {
         svars    = '',
         query    = [],
         state    = {GUPct:-1},
-    // presuambly, if there were a count() or something, there'd be more units, 
+    // presuambly, if there were a count() or something, there'd be more units,
     // but we're going to pretend there's only ever one
         unit = this.parsed.units[0];
 
 
-    // 1. get bits and pieces. 
+    // 1. get bits and pieces.
 
     if (unit.kind == 'select')
         query.push(' SELECT');
@@ -207,8 +207,8 @@ Query.prototype.toString = function () {
     if (unit.modifier)
         query.push(unit.modifier);
 
-// we could also just go over this._projSet, but I don't yet know what other 
-// legal tokens there are in a projection and for now we want to panic if we 
+// we could also just go over this._projSet, but I don't yet know what other
+// legal tokens there are in a projection and for now we want to panic if we
 // aren't seeing variables
     each(unit.projection, function (token, i) {
         if (token.kind != 'var')
@@ -222,7 +222,7 @@ Query.prototype.toString = function () {
     query.push('WHERE');
 
     // now we just traverse the patterns and build up our string
-    // much easier to do than to explain, unfortunately.    
+    // much easier to do than to explain, unfortunately.
     visit(unit.pattern.patterns, function (_) { // pre
         if (_ && _.token) {
             if (_.token == 'optionalgraphpattern')
@@ -263,7 +263,7 @@ Query.prototype.toString = function () {
             query.push('UNION');
 
         if (_.token && _.token == 'graphunionpattern') {
-            (state.GUPct == 0 || !(state.GUPct % 2)) && query.pop();
+            !(state.GUPct % 2) && query.pop();
             state.inGUP = false;
             state.GUPct = -1;
         }
