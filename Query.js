@@ -3,8 +3,10 @@
  * ly. WARNING: My grasp of Sparql semantics is slight and shaky. Much of what
  * happens here is still guesswork and will be fixed as my understanding grows.
  *
- * There's nothing going on here that couldn't be done with Jena, but then I'd
- * have to use Java.
+ * There's nothing going on here that couldn't be done with Jena (probably), but
+ * then I'd have to use Java.
+ *
+ * 
  *
  * @author Noah Feldman
  *
@@ -220,18 +222,22 @@ Query.prototype.toString = function () {
     query.push(svars);
 
     query.push('WHERE');
+    query.push('{')
 
     // now we just traverse the patterns and build up our string
     // much easier to do than to explain, unfortunately.
+    // The syntax rules for sparql are annoying.
     visit(unit.pattern.patterns, function (_) { // pre
         if (_ && _.token) {
-            if (_.token == 'optionalgraphpattern')
+            console.log(_.token)
+            if (_.token == 'optionalgraphpattern') {
                 query.push('OPTIONAL');
+            }
 
             if (_.token == 'graphunionpattern') {
                 state.inGUP = true;
                 ++state.GUPct;
-                query.push('{');
+                // query.push('{');
             }
 
             if (_.token == 'groupgraphpattern')
@@ -256,7 +262,7 @@ Query.prototype.toString = function () {
     }, function (_, p) { // post
         _ && _.subject && query.push('.'); // end of a triple
 
-        if (_.token == 'optionalgraphpattern' || _.token == 'groupgraphpattern')
+        if (_.token == 'groupgraphpattern')
             query.push('}');
 
         if (_.token == 'groupgraphpattern' && state.inGUP)
@@ -268,7 +274,7 @@ Query.prototype.toString = function () {
             state.GUPct = -1;
         }
     });
-
+    query.push('}')
     return this.query = prefixes + query.join(' ');
 
 };
