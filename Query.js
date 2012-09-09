@@ -1,12 +1,5 @@
 /**
- * @fileOverview Provides a Query class for building sparql queries incremental-
- * ly. WARNING: My grasp of Sparql semantics is slight and shaky. Much of what
- * happens here is still guesswork and will be fixed as my understanding grows.
- *
- * There's nothing going on here that couldn't be done with Jena (probably), but
- * then I'd have to use Java.
- *
- * 
+ * @fileOverview Provides a Query class for building sparql queries incrementally
  *
  * @author Noah Feldman
  *
@@ -15,7 +8,6 @@
  */
 var AbstractQueryTree = require("./rdfstore-js/src/js-sparql-parser/src/abstract_query_tree").AbstractQueryTree.AbstractQueryTree,
 
-    // these two are from my requirer project
     each  = require('./each'),
     visit = require('./visit'),
 
@@ -216,7 +208,7 @@ Query.prototype.toString = function () {
         if (token.kind != 'var')
             throw new Error('Query only understands variables in projection at the moment.'); // can have other stuff?
 
-        svars += (i?' ':'') + '?' + token.value.value;
+        svars += (i ? ' ' : '') + '?' + token.value.value;
     });
 
     query.push(svars);
@@ -229,7 +221,6 @@ Query.prototype.toString = function () {
     // The syntax rules for sparql are annoying.
     visit(unit.pattern.patterns, function (_) { // pre
         if (_ && _.token) {
-            console.log(_.token)
             if (_.token == 'optionalgraphpattern') {
                 query.push('OPTIONAL');
             }
@@ -259,8 +250,8 @@ Query.prototype.toString = function () {
             }
         }
 
-    }, function (_, p) { // post
-        _ && _.subject && query.push('.'); // end of a triple
+    }, function (_) { // post
+        _ && _.subject && query.push('.');
 
         if (_.token == 'groupgraphpattern')
             query.push('}');
